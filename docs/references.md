@@ -1,48 +1,58 @@
 # References and Attribution
 
-## Scientific references
+## Scientific and technical references
 
 1. **SSIM**  
-   Wang, Z., Bovik, A. C., Sheikh, H. R., & Simoncelli, E. P. (2004).  
-   *Image quality assessment: From error visibility to structural similarity*.  
-   IEEE Transactions on Image Processing, 13(4), 600–612.  
+   Wang, Z., Bovik, A. C., Sheikh, H. R., & Simoncelli, E. P. (2004). *Image quality assessment: From error visibility to structural similarity*. IEEE Transactions on Image Processing, 13(4), 600–612.  
    DOI: https://doi.org/10.1109/TIP.2003.819861  
-   Used here through `skimage.metrics.structural_similarity`.
+   Used through `skimage.metrics.structural_similarity`.
 
 2. **OpenCV perspective geometry**  
-   The implementation uses OpenCV's `getPerspectiveTransform` and `warpPerspective` for a projective transform/homography. These are standard computer-vision operations; the local project does not claim a new homography algorithm.
-   - OpenCV documentation: https://docs.opencv.org/4.x/da/d54/group__imgproc__transform.html
+   The implementation uses OpenCV's `getPerspectiveTransform` and `warpPerspective` for a standard projective transform/homography.  
+   Documentation: https://docs.opencv.org/4.x/da/d54/group__imgproc__transform.html
 
 3. **Chess rules and legal move generation**  
-   The project delegates chess rules and legal move generation to `python-chess`.
-   - Documentation: https://python-chess.readthedocs.io/
-   - Repository: https://github.com/niklasf/python-chess
+   The project delegates chess rules and legal move generation to `python-chess`.  
+   Documentation: https://python-chess.readthedocs.io/  
+   Repository: https://github.com/niklasf/python-chess
 
 4. **Stockfish**  
-   Stockfish is an external UCI chess engine. Its search, NNUE evaluation and implementation are not original algorithms of this project.
-   - Website: https://stockfishchess.org/
-   - Repository: https://github.com/official-stockfish/Stockfish
-   - Project-local citation and license files: `latest/stockfish/CITATION.cff` and `latest/stockfish/Copying.txt`
+   Stockfish is an external UCI chess engine. Its search, NNUE evaluation, and implementation are not original algorithms of this project.  
+   Website: https://stockfishchess.org/  
+   Repository: https://github.com/official-stockfish/Stockfish  
+   Local citation/license: `latest/stockfish/CITATION.cff` and `latest/stockfish/Copying.txt`
 
-## Local algorithms and design contributions
+## Board-corner model
 
-The following parts are project-specific engineering logic, not claims of new scientific algorithms:
+The optional corner detector referenced in the source is:
 
-- Reusing calibrated board corners instead of running detection on every frame.
+- **Model ID:** `chessboard-detection-yqcnu/3`
+- **Roboflow model page:** https://universe.roboflow.com/chessboard-corner-detection-3b5bs/chessboard-detection-yqcnu
+- **Version/dataset page:** https://universe.roboflow.com/chessboard-corner-detection-3b5bs/chessboard-detection-yqcnu/dataset/3
+
+The model is an object detector trained for chessboard-corner annotations. The local code takes detections, converts their bounding-box centers into points, and orders the points. It is an optional fallback; calibrated `board_corners.json` is used when present. The model's accuracy has not been independently benchmarked in this repository.
+
+## Local engineering contributions
+
+The following are project-specific integration decisions, not claims of new scientific algorithms:
+
+- Reusing calibrated corners instead of detecting them on every frame.
 - Mapping 8×8 image cells to algebraic squares.
 - Selecting changed squares from SSIM scores.
 - Handling special castling patterns.
-- Constraining observed changes to legal moves and comparing symmetric differences.
+- Constraining observations to legal moves using symmetric differences.
 - Translating UCI moves into calibrated pick/place/throw sequences.
 - Verifying the robot move with a subsequent visual observation.
+- Keeping camera and arm integration behind replaceable adapters.
 
-## External services and hardware
+## External hardware and services
 
-- IP Camera application on a phone, providing an HTTP still-image endpoint.
+- A phone/IP Camera application that provides an HTTP still-image endpoint.
 - Arduino Uno and servo motors.
-- Roboflow Inference/model endpoint may be used by the optional corner detector. The model identifier currently referenced by the code is `chessboard-detection-yqcnu/3`; its accuracy and availability must be verified independently.
+- Roboflow Inference/model endpoint for the optional corner detector.
+- A compatible 6-DOF robotic arm; the project does not require a proprietary arm design.
 
-## Citation suggestion
+## Suggested citation
 
 ```bibtex
 @software{chess_robot_prototype,
@@ -52,4 +62,3 @@ The following parts are project-specific engineering logic, not claims of new sc
   note   = {Prototype integrating IP camera vision, python-chess, Stockfish, Arduino, and a 6-DOF robotic arm}
 }
 ```
-
