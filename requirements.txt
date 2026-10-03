@@ -1,0 +1,9 @@
+opencv-python
+numpy
+scikit-image
+python-chess
+pyserial
+supervision
+inference
+cairosvg
+

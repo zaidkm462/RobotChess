@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chess Robot Studio</title>
+  <style>
+    :root {
+      --bg-1: #08111f;
+      --bg-2: #0f172a;
+      --panel: rgba(15, 23, 42, 0.88);
+      --panel-strong: rgba(17, 24, 39, 0.96);
+      --line: rgba(148, 163, 184, 0.18);
+      --line-2: rgba(148, 163, 184, 0.28);
+      --text: #eef2ff;
+      --muted: #9fb0c7;
+      --accent: #fbbf24;
+      --accent-2: #f59e0b;
+      --ok: #10b981;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --chip: rgba(255,255,255,0.06);
+      --shadow: 0 22px 60px rgba(0,0,0,0.35);
+      --light-square: #dfc9a3;
+      --dark-square: #7a5734;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: Tahoma, Arial, sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top right, rgba(251,191,36,0.14), transparent 22%),
+        radial-gradient(circle at left bottom, rgba(59,130,246,0.10), transparent 18%),
+        linear-gradient(145deg, var(--bg-1), var(--bg-2) 48%, #111827);
+    }
+
+    .shell {
+      max-width: 1550px;
+      margin: 0 auto;
+      padding: 18px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .hero-card,
+    .panel,
+    .mini-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .hero-card {
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      width: 240px;
+      height: 240px;
+      left: -70px;
+      top: -70px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(251,191,36,.15), transparent 65%);
+      pointer-events: none;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(1.7rem, 2vw, 2.4rem);
+      color: var(--accent);
+    }
+
+    .hero p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.95;
+    }
+
+    .hero-side {
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .status-box {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line);
+    }
+
+    .status-label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    .status-value {
+      font-size: 1.05rem;
+      font-weight: 800;
+    }
+
+    .status-value.connected { color: #a7f3d0; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      background: var(--chip);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .tab {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      border-radius: 16px;
+      padding: 12px 16px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: .18s ease;
+    }
+
+    .tab:hover { transform: translateY(-1px); border-color: var(--line-2); }
+    .tab.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #111827;
+      border-color: transparent;
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .grid-2,
+    .grid-3,
+    .grid-4 {
+      display: grid;
+      gap: 18px;
+    }
+    .grid-2 { grid-template-columns: 1.15fr .85fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+    .panel { padding: 18px; }
+    .panel h2, .panel h3 {
+      margin-top: 0;
+      color: var(--accent);
+    }
+
+    .subtext {
+      color: var(--muted);
+      line-height: 1.8;
+      font-size: 14px;
+    }
+
+    .slider-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .slider-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .slider-title {
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .angle-badge {
+      min-width: 72px;
+      text-align: center;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(251,191,36,0.10);
+      border: 1px solid rgba(251,191,36,0.25);
+      font-weight: 800;
+    }
+
+    .slider-row {
+      display: grid;
+      grid-template-columns: 1fr 96px;
+      gap: 12px;
+      align-items: center;
+    }
+
+    input[type="range"] { width: 100%; }
+
+    input[type="number"],
+    input[type="text"],
+    select,
+    button,
+    textarea {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      padding: 12px 14px;
+      font: inherit;
+    }
+
+    textarea { resize: vertical; min-height: 120px; }
+
+    button {
+      cursor: pointer;
+      font-weight: 800;
+      transition: .18s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #111827;
+      border-color: transparent;
+    }
+    button.secondary { background: rgba(255,255,255,0.07); }
+    button.ok { background: linear-gradient(135deg, #10b981, #059669); border-color: transparent; }
+    button.warn { background: linear-gradient(135deg, #f59e0b, #d97706); border-color: transparent; }
+    button.danger { background: linear-gradient(135deg, #ef4444, #dc2626); border-color: transparent; }
+
+    .button-grid-2,
+    .button-grid-3,
+    .button-grid-4 {
+      display: grid;
+      gap: 10px;
+    }
+    .button-grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .button-grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .button-grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+    .field { margin-bottom: 12px; }
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .list {
+      max-height: 500px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .list-item {
+      padding: 14px;
+      border-bottom: 1px solid rgba(148,163,184,.12);
+      cursor: pointer;
+    }
+    .list-item:last-child { border-bottom: none; }
+    .list-item:hover,
+    .list-item.active { background: rgba(251,191,36,0.08); }
+
+    .list-title { font-weight: 800; }
+    .list-meta {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      direction: ltr;
+      text-align: left;
+      line-height: 1.7;
+    }
+
+    .console {
+      min-height: 260px;
+      max-height: 360px;
+      overflow: auto;
+      background: #09111d;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      padding: 14px;
+      direction: ltr;
+      text-align: left;
+      font-family: Consolas, monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .mini-card {
+      padding: 14px;
+      text-align: center;
+    }
+
+    .mini-card .n {
+      font-size: 1.55rem;
+      font-weight: 900;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .legend { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0 0; }
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+
+    .board-wrap {
+      display: flex;
+      justify-content: center;
+      margin-top: 14px;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: 28px repeat(8, minmax(44px, 1fr));
+      grid-template-rows: 28px repeat(8, minmax(44px, 1fr));
+      gap: 4px;
+      width: min(100%, 720px);
+      aspect-ratio: 1;
+      padding: 10px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line);
+    }
+
+    .coord {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .square {
+      position: relative;
+      border: none;
+      border-radius: 12px;
+      font-weight: 900;
+      overflow: hidden;
+      min-height: 48px;
+      transition: .18s ease;
+      color: #0f172a;
+    }
+    .square:hover { transform: translateY(-1px) scale(1.01); }
+    .square.light { background: var(--light-square); }
+    .square.dark { background: var(--dark-square); color: #f8fafc; }
+    .square.selected { outline: 3px solid var(--accent); }
+    .square.partial { background: linear-gradient(135deg, #f59e0b, #d97706) !important; color: white; }
+    .square.complete { background: linear-gradient(135deg, #10b981, #047857) !important; color: white; }
+    .square .hint {
+      position: absolute;
+      bottom: 5px;
+      right: 6px;
+      font-size: 10px;
+      opacity: 0.95;
+    }
+    .square .badge {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.24);
+      color: white;
+    }
+
+    .info-box {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line);
+      line-height: 1.85;
+      color: var(--muted);
+    }
+
+    .progress {
+      height: 12px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--line);
+      margin-top: 12px;
+    }
+
+    .progress > div {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--ok));
+      transition: width .25s ease;
+    }
+
+    .empty-state {
+      color: var(--muted);
+      text-align: center;
+      padding: 18px;
+    }
+
+    .footer-note {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 1200px) {
+      .hero,
+      .grid-2,
+      .grid-3,
+      .grid-4,
+      .stats { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 820px) {
+      .slider-row,
+      .button-grid-2,
+      .button-grid-3,
+      .button-grid-4 { grid-template-columns: 1fr; }
+      .board { grid-template-columns: 24px repeat(8, minmax(34px, 1fr)); grid-template-rows: 24px repeat(8, minmax(34px, 1fr)); }
+      .hero-card, .hero-side, .panel { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="hero-card">
+        <h1>Chess Robot Studio</h1>
+        <p>
+          واجهة أجمل من النسخة القديمة ومقسمة إلى صفحات داخلية حتى يكون الشغل أوضح:
+          <b>تحكم مباشر</b>، <b>معايرة بورد الشطرنج</b>، <b>الوضعيات المحفوظة</b>، و<b>الملخص والسجل</b>.
+          نفس فكرة ملفك السابق، لكن بتنظيم أفضل ويصلح لخطة مشروع الشطرنج.
+        </p>
+        <div class="legend">
+          <span><i class="dot" style="background:#10b981"></i> مربع مكتمل</span>
+          <span><i class="dot" style="background:#f59e0b"></i> مربع ناقص</span>
+          <span><i class="dot" style="background:#fbbf24"></i> مربع محدد</span>
+        </div>
+      </div>
+
+      <div class="hero-side hero-card">
+        <div class="status-box">
+          <div class="status-label">حالة الاتصال</div>
+          <div class="status-value" id="topConnectionText">غير متصل</div>
+        </div>
+        <div class="status-box">
+          <div class="status-label">المربع المحدد</div>
+          <div class="status-value" id="topSelectedSquare">لا يوجد</div>
+        </div>
+        <div class="chips">
+          <span class="chip">الأوامر: B / S / E / W / P / G</span>
+          <span class="chip">الحفظ محليًا داخل المتصفح</span>
+          <span class="chip">يدعم JSON Export / Import</span>
+        </div>
+      </div>
+    </section>
+
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-page="controlPage">التحكم المباشر</button>
+      <button class="tab" data-page="boardPage">معايرة البورد</button>
+      <button class="tab" data-page="positionsPage">الوضعيات المحفوظة</button>
+      <button class="tab" data-page="summaryPage">الملخص والسجل</button>
+    </nav>
+
+    <main>
+      <section class="page active" id="controlPage">
+        <div class="grid-2">
+          <div class="panel">
+            <h2>تحكم المفاصل الستة</h2>
+            <div class="subtext">السلايدرات والنوافذ الرقمية مربوطات سويًا. أي تغيير هنا يمكن إرساله مباشرة للأردوينو.</div>
+            <div style="margin-top:14px;" id="slidersRoot"></div>
+            <div class="button-grid-3" style="margin-top:14px;">
+              <button class="primary" id="sendCurrentBtn">إرسال الزوايا الحالية</button>
+              <button class="secondary" id="homeBtn">رجوع Home</button>
+              <button class="secondary" id="copyCurrentBtn">نسخ الزوايا الحالية</button>
+              <button class="secondary" id="gripperOpenBtn">فتح الماسك</button>
+              <button class="secondary" id="gripperCloseBtn">غلق الماسك</button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h2>اتصال وتحكم سريع</h2>
+            <div class="field">
+              <label>حالة الربط</label>
+              <div class="info-box"><span id="connectionText">غير متصل</span></div>
+            </div>
+            <div class="button-grid-2">
+              <button class="primary" id="connectBtn">ربط مع Arduino</button>
+              <button class="secondary" id="testSendBtn">إرسال اختبار</button>
+            </div>
+            <div class="field" style="margin-top:14px;">
+              <label>اسم الوضعية الحالية السريع</label>
+              <input type="text" id="quickPositionName" placeholder="مثال: E2_up" />
+            </div>
+            <div class="field">
+              <label>مدة الحركة (تخزين فقط)</label>
+              <input type="number" id="moveTimeInput" min="100" step="100" value="1200" />
+            </div>
+            <div class="button-grid-2">
+              <button class="ok" id="saveQuickBtn">حفظ الوضعية الحالية</button>
+              <button class="secondary" id="fillFromSquareBtn">اسم من المربع المحدد</button>
+            </div>
+            <div class="footer-note">
+              هذه الصفحة مخصصة للحركة اليدوية وضبط الزوايا قبل الانتقال إلى صفحة البورد أو صفحة الوضعيات.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="boardPage">
+        <div class="grid-2">
+          <div class="panel">
+            <h2>بورد الشطرنج</h2>
+            <div class="subtext">اختر مربعًا، ثم خزّن له وضعية <b>up</b> ووضعية <b>down</b>. إذا اكتملتا يصير المربع أخضر.</div>
+            <div class="board-wrap">
+              <div class="board" id="board"></div>
+            </div>
+            <div class="stats">
+              <div class="mini-card"><div class="n" id="doneSquares">0</div><div>مكتمل</div></div>
+              <div class="mini-card"><div class="n" id="partialSquares">0</div><div>جزئي</div></div>
+              <div class="mini-card"><div class="n" id="savedPositionsCount">0</div><div>الوضعيات</div></div>
+              <div class="mini-card"><div class="n" id="completionPercent">0%</div><div>نسبة الإكمال</div></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h2>معايرة المربع المحدد</h2>
+            <div class="field">
+              <label>المربع الحالي</label>
+              <div class="info-box"><b id="selectedSquareText">لا يوجد</b></div>
+            </div>
+            <div class="field">
+              <label>الوضعية المقترحة</label>
+              <select id="squareModeSelect">
+                <option value="up">up</option>
+                <option value="down">down</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>الاسم المقترح</label>
+              <input type="text" id="squareSuggestedName" placeholder="اختر مربعًا أولًا" />
+            </div>
+            <div class="button-grid-2">
+              <button class="ok" id="saveSquareModeBtn">حفظ الوضعية المقترحة</button>
+              <button class="warn" id="loadSquareModeBtn">تحميل الوضعية المقترحة</button>
+            </div>
+            <div class="button-grid-2" style="margin-top:10px;">
+              <button class="ok" id="saveSquareUpBtn">حفظ up للمربع</button>
+              <button class="ok" id="saveSquareDownBtn">حفظ down للمربع</button>
+            </div>
+            <div class="info-box" style="margin-top:14px;">
+              أسرع طريقة للشغل:<br>
+              1) اختَر المربع من البورد.<br>
+              2) حرّك الذراع من صفحة التحكم المباشر أو من نفس السلايدرات إذا كنت عليها سابقًا.<br>
+              3) احفظ <b>up</b> ثم <b>down</b>.<br>
+              4) راقب اللون حتى تعرف شنو خلص وشنو بعده ناقص.
+            </div>
+            <div class="progress"><div id="boardProgressBar"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="positionsPage">
+        <div class="grid-2">
+          <div class="panel">
+            <h2>إدارة الوضعيات</h2>
+            <div class="field">
+              <label>اسم الوضعية</label>
+              <input type="text" id="positionNameInput" placeholder="مثال: A1_up أو Home" />
+            </div>
+            <div class="button-grid-4">
+              <button class="ok" id="savePositionBtn">حفظ</button>
+              <button class="secondary" id="updatePositionBtn">تحديث</button>
+              <button class="danger" id="deletePositionBtn">حذف</button>
+              <button class="secondary" id="clearAllBtn">حذف الكل</button>
+            </div>
+            <div class="button-grid-4" style="margin-top:10px;">
+              <button class="secondary" id="applyPositionBtn">تحميل على السلايدرات</button>
+              <button class="primary" id="sendPositionBtn">إرسال المحددة</button>
+              <button class="secondary" id="copySelectedBtn">نسخ JSON</button>
+              <button class="secondary" id="renameFromSquareBtn">اسم من المربع</button>
+            </div>
+            <div class="button-grid-3" style="margin-top:10px;">
+              <button class="secondary" id="exportBtn">Export JSON</button>
+              <button class="secondary" id="importBtn">Import JSON</button>
+              <button class="secondary" id="selectHomeBtn">اختر Home</button>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h2>مكتبة الوضعيات</h2>
+            <div class="field">
+              <label>بحث</label>
+              <input type="text" id="searchInput" placeholder="ابحث باسم الوضعية..." />
+            </div>
+            <div class="list" id="positionsList"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="summaryPage">
+        <div class="grid-2">
+          <div class="panel">
+            <h2>السجل</h2>
+            <div class="button-grid-2" style="margin-bottom:10px;">
+              <button class="secondary" id="clearConsoleBtn">مسح السجل</button>
+              <button class="secondary" id="copyConsoleBtn">نسخ السجل</button>
+            </div>
+            <div class="console" id="console"></div>
+          </div>
+
+          <div class="panel">
+            <h2>ملخص المشروع</h2>
+            <div class="info-box">
+              <div><b>التخزين:</b> داخل المتصفح باستخدام localStorage.</div>
+              <div><b>التوافق:</b> Chrome / Edge لأن الربط يستخدم Web Serial.</div>
+              <div><b>الأوامر:</b> B, S, E, W, P, G.</div>
+              <div><b>أفضل استخدام بخطتكم:</b> خزّنوا لكل مربع وضعيتين على الأقل: <b>up</b> و<b>down</b>.</div>
+            </div>
+            <div class="stats">
+              <div class="mini-card"><div class="n" id="summaryTotalPositions">0</div><div>كل الوضعيات</div></div>
+              <div class="mini-card"><div class="n" id="summaryCompletedSquares">0</div><div>مربعات مكتملة</div></div>
+              <div class="mini-card"><div class="n" id="summaryPartialSquares">0</div><div>مربعات جزئية</div></div>
+              <div class="mini-card"><div class="n" id="summarySelected">—</div><div>المحدد</div></div>
+            </div>
+            <div class="footer-note">
+              إذا تريد لاحقًا، أقدر أفصل هذه النسخة إلى <b>أربع ملفات HTML فعلية</b> بدل صفحات داخلية داخل نفس الملف.
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <input type="file" id="jsonFileInput" accept=".json" class="hidden" />
+
+  <script>
+    const JOINTS = [
+      { key: 'base', label: 'Base', cmd: 'B', min: 0, max: 180, value: 90 },
+      { key: 'shoulder', label: 'Shoulder', cmd: 'S', min: 0, max: 180, value: 140 },
+      { key: 'elbow', label: 'Elbow', cmd: 'E', min: 0, max: 180, value: 140 },
+      { key: 'wristRot', label: 'Wrist Rotation', cmd: 'W', min: 0, max: 180, value: 90 },
+      { key: 'wristPitch', label: 'Wrist Pitch', cmd: 'P', min: 0, max: 180, value: 50 },
+      { key: 'gripper', label: 'Gripper', cmd: 'G', min: 0, max: 180, value: 90 }
+    ];
+
+    const HOME = { base: 90, shoulder: 140, elbow: 140, wristRot: 90, wristPitch: 50, gripper: 90 };
+    const STORAGE_KEY = 'chessRobotStudio_v3';
+    const FILES = ['A','B','C','D','E','F','G','H'];
+    const RANKS = ['8','7','6','5','4','3','2','1'];
+
+    let positions = loadPositions();
+    let selectedIndex = -1;
+    let selectedSquare = null;
+    let squareMode = 'up';
+    let port = null;
+    let writer = null;
+    let reader = null;
+    let isConnected = false;
+    let sendDebounce = null;
+    let canSend = false;
+
+    const $ = (id) => document.getElementById(id);
+
+    function log(message) {
+      const line = `[${new Date().toLocaleTimeString()}] ${message}`;
+      const div = document.createElement('div');
+      div.textContent = line;
+      $('console').appendChild(div);
+      $('console').scrollTop = $('console').scrollHeight;
+    }
+
+    function loadPositions() {
+      try {
+        const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        return Array.isArray(data) ? data : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function persistPositions() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(positions));
+    }
+
+    function normalizeName(name) {
+      return String(name || '').trim().toLowerCase();
+    }
+
+    function currentAngles() {
+      const out = {};
+      for (const joint of JOINTS) out[joint.key] = parseInt($(joint.key).value, 10);
+      return out;
+    }
+
+    function setAngles(values) {
+      for (const joint of JOINTS) {
+        const v = values[joint.key] ?? joint.value;
+        $(joint.key).value = v;
+        $(joint.key + 'Number').value = v;
+        $(joint.key + 'Badge').textContent = `${v}°`;
+      }
+    }
+
+    function buildSliders() {
+      const root = $('slidersRoot');
+      root.innerHTML = '';
+      JOINTS.forEach(joint => {
+        const box = document.createElement('div');
+        box.className = 'slider-card';
+        box.innerHTML = `
+          <div class="slider-head">
+            <div class="slider-title">${joint.label} <span style="color:var(--muted);font-size:12px;">(${joint.cmd})</span></div>
+            <div class="angle-badge" id="${joint.key}Badge">${joint.value}°</div>
+          </div>
+          <div class="slider-row">
+            <input type="range" id="${joint.key}" min="${joint.min}" max="${joint.max}" value="${joint.value}">
+            <input type="number" id="${joint.key}Number" min="${joint.min}" max="${joint.max}" value="${joint.value}">
+          </div>
+        `;
+        root.appendChild(box);
+
+        const range = $(joint.key);
+        const number = $(joint.key + 'Number');
+
+        const sync = (value) => {
+          let v = Number(value);
+          if (Number.isNaN(v)) v = joint.value;
+          v = Math.max(joint.min, Math.min(joint.max, v));
+          range.value = v;
+          number.value = v;
+          $(joint.key + 'Badge').textContent = `${v}°`;
+          clearTimeout(sendDebounce);
+          sendDebounce = setTimeout(() => sendSingleJoint(joint, false), 80);
+        };
+
+        range.addEventListener('input', () => sync(range.value));
+        number.addEventListener('input', () => sync(number.value));
+      });
+    }
+
+    function updateConnectionUI() {
+      const text = isConnected ? 'متصل' : 'غير متصل';
+      $('connectionText').textContent = text;
+      $('topConnectionText').textContent = text;
+      $('topConnectionText').classList.toggle('connected', isConnected);
+      $('connectBtn').textContent = isConnected ? 'تم الربط' : 'ربط مع Arduino';
+    }
+
+    async function connectArduino() {
+      if (!('serial' in navigator)) {
+        alert('هذا المتصفح لا يدعم Web Serial. استخدم Chrome أو Edge.');
+        return;
+      }
+      try {
+        port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 9600 });
+
+        // أغلب ألواح Arduino تعمل reset بعد فتح الـ Serial
+        // لذلك ننتظر قليلًا قبل أول إرسال حتى لا تضيع أول الأوامر.
+        await new Promise(resolve => setTimeout(resolve, 2200));
+
+        writer = port.writable.getWriter();
+        reader = port.readable.getReader();
+        isConnected = true;
+        canSend = true;
+        updateConnectionUI();
+        log('Connected to Arduino (ready after reset delay)');
+        readLoop();
+      } catch (err) {
+        log('Connect error: ' + err.message);
+      }
+    }
+
+    async function readLoop() {
+      if (!reader) return;
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          if (value) {
+            const text = new TextDecoder().decode(value).trim();
+            if (text) log('Arduino: ' + text);
+          }
+        }
+      } catch (err) {
+        log('Read error: ' + err.message);
+      }
+    }
+
+    async function sendSingleJoint(joint, showLog = false) {
+      if (!isConnected || !writer || !canSend) return;
+      try {
+        const value = parseInt($(joint.key).value, 10);
+        const cmd = `${joint.cmd}${value}\n`;
+        await writer.write(new TextEncoder().encode(cmd));
+        if (showLog) log(`Sent ${joint.label}: ${cmd.trim()}`);
+      } catch (err) {
+        log('Send error: ' + err.message);
+      }
+    }
+
+    async function sendCurrentAngles(showLog = true) {
+      if (!isConnected || !writer || !canSend) return;
+      try {
+        for (const joint of JOINTS) {
+          const value = $(joint.key).value;
+          const cmd = `${joint.cmd}${value}\n`;
+          await writer.write(new TextEncoder().encode(cmd));
+          await new Promise(resolve => setTimeout(resolve, 20));
+        }
+        if (showLog) log('Current angles sent');
+      } catch (err) {
+        log('Send error: ' + err.message);
+      }
+    }
+
+    function getSquareStatus(square) {
+      const key = square.toLowerCase();
+      const up = positions.some(p => normalizeName(p.name) === `${key}_up`);
+      const down = positions.some(p => normalizeName(p.name) === `${key}_down`);
+      return { up, down, partial: up || down, complete: up && down };
+    }
+
+    function buildBoard() {
+      const board = $('board');
+      board.innerHTML = '';
+      board.appendChild(document.createElement('div'));
+      FILES.forEach(file => {
+        const c = document.createElement('div');
+        c.className = 'coord';
+        c.textContent = file;
+        board.appendChild(c);
+      });
+      RANKS.forEach((rank, r) => {
+        const left = document.createElement('div');
+        left.className = 'coord';
+        left.textContent = rank;
+        board.appendChild(left);
+        FILES.forEach((file, f) => {
+          const square = file + rank;
+          const btn = document.createElement('button');
+          btn.className = `square ${(r + f) % 2 === 0 ? 'light' : 'dark'}`;
+          btn.dataset.square = square;
+          btn.innerHTML = `<span>${square}</span><span class="hint"></span>`;
+          btn.addEventListener('click', () => selectSquare(square));
+          board.appendChild(btn);
+        });
+      });
+      renderBoardState();
+    }
+
+    function selectSquare(square) {
+      selectedSquare = square;
+      $('selectedSquareText').textContent = square;
+      $('topSelectedSquare').textContent = square;
+      updateSquareSuggestedName();
+      renderBoardState();
+      log('Square selected: ' + square);
+    }
+
+    function updateSquareSuggestedName() {
+      const mode = $('squareModeSelect').value;
+      squareMode = mode;
+      const suggested = selectedSquare ? `${selectedSquare}_${mode}` : '';
+      $('squareSuggestedName').value = suggested;
+      if (!$('quickPositionName').value.trim() || $('quickPositionName').value.includes('_')) {
+        $('quickPositionName').value = suggested;
+      }
+    }
+
+    function calculateBoardStats() {
+      let done = 0;
+      let partial = 0;
+      FILES.forEach(file => {
+        RANKS.forEach(rank => {
+          const s = getSquareStatus(file + rank);
+          if (s.complete) done++;
+          else if (s.partial) partial++;
+        });
+      });
+      return { done, partial, percent: Math.round((done / 64) * 100) };
+    }
+
+    function renderBoardState() {
+      const buttons = document.querySelectorAll('.square');
+      let done = 0;
+      let partial = 0;
+
+      buttons.forEach(btn => {
+        const square = btn.dataset.square;
+        const status = getSquareStatus(square);
+        btn.classList.remove('selected', 'partial', 'complete');
+        const hint = btn.querySelector('.hint');
+        hint.textContent = '';
+        const badge = btn.querySelector('.badge');
+        if (badge) badge.remove();
+
+        if (selectedSquare === square) btn.classList.add('selected');
+        if (status.complete) {
+          btn.classList.add('complete');
+          hint.textContent = 'up + down';
+          done++;
+        } else if (status.partial) {
+          btn.classList.add('partial');
+          hint.textContent = status.up ? 'up' : 'down';
+          partial++;
+        }
+        if (status.partial) {
+          const b = document.createElement('span');
+          b.className = 'badge';
+          b.textContent = status.complete ? '2/2' : '1/2';
+          btn.appendChild(b);
+        }
+      });
+
+      const percent = Math.round((done / 64) * 100);
+      $('doneSquares').textContent = done;
+      $('partialSquares').textContent = partial;
+      $('savedPositionsCount').textContent = positions.length;
+      $('completionPercent').textContent = percent + '%';
+      $('boardProgressBar').style.width = percent + '%';
+
+      $('summaryTotalPositions').textContent = positions.length;
+      $('summaryCompletedSquares').textContent = done;
+      $('summaryPartialSquares').textContent = partial;
+      $('summarySelected').textContent = selectedSquare || '—';
+    }
+
+    function filteredPositions() {
+      const q = normalizeName($('searchInput').value);
+      if (!q) return positions;
+      return positions.filter(p => normalizeName(p.name).includes(q));
+    }
+
+    function renderPositions() {
+      const list = $('positionsList');
+      list.innerHTML = '';
+      const data = filteredPositions();
+
+      if (!data.length) {
+        list.innerHTML = `<div class="empty-state">لا توجد وضعيات مطابقة.</div>`;
+        renderBoardState();
+        return;
+      }
+
+      data.forEach(pos => {
+        const realIndex = positions.findIndex(p => p === pos);
+        const item = document.createElement('div');
+        item.className = 'list-item' + (realIndex === selectedIndex ? ' active' : '');
+        item.innerHTML = `
+          <div class="list-title">${pos.name}</div>
+          <div class="list-meta">B:${pos.angles.base} S:${pos.angles.shoulder} E:${pos.angles.elbow} W:${pos.angles.wristRot} P:${pos.angles.wristPitch} G:${pos.angles.gripper}<br>moveTime: ${pos.moveTime || 1200} ms</div>
+        `;
+        item.addEventListener('click', () => selectPosition(realIndex));
+        list.appendChild(item);
+      });
+
+      renderBoardState();
+    }
+
+    function selectPosition(index) {
+      selectedIndex = index;
+      const pos = positions[index];
+      if (!pos) return;
+      $('positionNameInput').value = pos.name;
+      $('quickPositionName').value = pos.name;
+      $('moveTimeInput').value = pos.moveTime || 1200;
+      const m = String(pos.name).toUpperCase().match(/^([A-H][1-8])_(UP|DOWN)$/);
+      if (m) {
+        selectedSquare = m[1];
+        $('squareModeSelect').value = m[2].toLowerCase();
+        updateSquareSuggestedName();
+      }
+      renderPositions();
+      log('Selected position: ' + pos.name);
+    }
+
+    function createPositionPayload(name) {
+      return {
+        name: name.trim(),
+        moveTime: parseInt($('moveTimeInput').value, 10) || 1200,
+        angles: currentAngles()
+      };
+    }
+
+    function saveNamedPosition(nameOverride = null) {
+      const name = (nameOverride || $('positionNameInput').value || $('quickPositionName').value).trim();
+      if (!name) return alert('اكتب اسم الوضعية أولًا');
+      const payload = createPositionPayload(name);
+      const idx = positions.findIndex(p => normalizeName(p.name) === normalizeName(name));
+      if (idx >= 0) {
+        positions[idx] = payload;
+        selectedIndex = idx;
+        log('Position overwritten: ' + name);
+      } else {
+        positions.push(payload);
+        selectedIndex = positions.length - 1;
+        log('Position saved: ' + name);
+      }
+      persistPositions();
+      $('positionNameInput').value = name;
+      $('quickPositionName').value = name;
+      renderPositions();
+    }
+
+    function updateSelectedPosition() {
+      if (selectedIndex < 0) return alert('اختر وضعية من القائمة أولًا');
+      const current = positions[selectedIndex];
+      const newName = ($('positionNameInput').value || current.name).trim();
+      positions[selectedIndex] = createPositionPayload(newName);
+      persistPositions();
+      renderPositions();
+      log('Position updated: ' + newName);
+    }
+
+    function deleteSelectedPosition() {
+      if (selectedIndex < 0) return alert('اختر وضعية من القائمة أولًا');
+      const removed = positions[selectedIndex]?.name;
+      positions.splice(selectedIndex, 1);
+      selectedIndex = -1;
+      persistPositions();
+      renderPositions();
+      log('Position deleted: ' + removed);
+    }
+
+    function applySelectedPosition() {
+      if (selectedIndex < 0) return alert('اختر وضعية من القائمة أولًا');
+      const pos = positions[selectedIndex];
+      setAngles(pos.angles);
+      $('moveTimeInput').value = pos.moveTime || 1200;
+      log('Position loaded to sliders: ' + pos.name);
+    }
+
+    async function sendSelectedPosition() {
+      if (selectedIndex < 0) return alert('اختر وضعية من القائمة أولًا');
+      const pos = positions[selectedIndex];
+      setAngles(pos.angles);
+      await sendCurrentAngles(true);
+      log('Position sent: ' + pos.name);
+    }
+
+    function saveSelectedSquareMode(mode = null) {
+      if (!selectedSquare) return alert('اختر مربعًا من البورد أولًا');
+      if (mode) $('squareModeSelect').value = mode;
+      updateSquareSuggestedName();
+      const name = $('squareSuggestedName').value.trim();
+      $('positionNameInput').value = name;
+      $('quickPositionName').value = name;
+      saveNamedPosition(name);
+    }
+
+    function loadSelectedSquareMode() {
+      if (!selectedSquare) return alert('اختر مربعًا من البورد أولًا');
+      updateSquareSuggestedName();
+      const wanted = normalizeName($('squareSuggestedName').value);
+      const idx = positions.findIndex(p => normalizeName(p.name) === wanted);
+      if (idx < 0) return alert('هذه الوضعية غير محفوظة بعد');
+      selectPosition(idx);
+      applySelectedPosition();
+    }
+
+    function fillNameFromSelectedSquare() {
+      if (!selectedSquare) return alert('اختر مربعًا من البورد أولًا');
+      updateSquareSuggestedName();
+      $('positionNameInput').value = $('squareSuggestedName').value;
+      $('quickPositionName').value = $('squareSuggestedName').value;
+      log('Name filled from selected square');
+    }
+
+    function exportJSON() {
+      const blob = new Blob([JSON.stringify(positions, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'chess-robot-positions.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      log('JSON exported');
+    }
+
+    function importJSON() {
+      $('jsonFileInput').click();
+    }
+
+    function handleImportFile(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          if (!Array.isArray(data)) throw new Error('Invalid JSON format');
+          positions = data;
+          selectedIndex = -1;
+          persistPositions();
+          renderPositions();
+          log('JSON imported successfully');
+        } catch (err) {
+          alert('ملف JSON غير صحيح');
+          log('Import error: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function clearAllPositions() {
+      if (!confirm('تريد تحذف كل الوضعيات؟')) return;
+      positions = [];
+      selectedIndex = -1;
+      persistPositions();
+      renderPositions();
+      log('All positions cleared');
+    }
+
+    async function goHome() {
+      setAngles(HOME);
+      await sendCurrentAngles(true);
+      log('Moved to Home');
+    }
+
+    function copyCurrentAngles() {
+      const payload = {
+        angles: currentAngles(),
+        moveTime: parseInt($('moveTimeInput').value, 10) || 1200
+      };
+      navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+      log('Current angles copied');
+    }
+
+    function copySelectedJSON() {
+      if (selectedIndex < 0) return alert('اختر وضعية من القائمة أولًا');
+      navigator.clipboard.writeText(JSON.stringify(positions[selectedIndex], null, 2));
+      log('Selected position copied');
+    }
+
+    function copyConsole() {
+      navigator.clipboard.writeText($('console').innerText || '');
+      log('Console copied');
+    }
+
+    function clearConsole() {
+      $('console').innerHTML = '';
+    }
+
+    function selectHomePreset() {
+      $('positionNameInput').value = 'Home';
+      $('quickPositionName').value = 'Home';
+      setAngles(HOME);
+      log('Home preset selected');
+    }
+
+    async function testSend() {
+      await sendCurrentAngles(true);
+      log('Test send completed');
+    }
+
+    function switchPage(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === pageId));
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.page === pageId));
+    }
+
+    // Events
+    $('connectBtn').addEventListener('click', connectArduino);
+    $('sendCurrentBtn').addEventListener('click', () => sendCurrentAngles(true));
+    $('testSendBtn').addEventListener('click', testSend);
+    $('homeBtn').addEventListener('click', goHome);
+    $('copyCurrentBtn').addEventListener('click', copyCurrentAngles);
+    $('gripperOpenBtn').addEventListener('click', async () => { $('gripper').value = 120; $('gripperNumber').value = 120; $('gripperBadge').textContent = '120°'; await sendSingleJoint(JOINTS.find(j => j.key === 'gripper'), true); });
+    $('gripperCloseBtn').addEventListener('click', async () => { $('gripper').value = 40; $('gripperNumber').value = 40; $('gripperBadge').textContent = '40°'; await sendSingleJoint(JOINTS.find(j => j.key === 'gripper'), true); });
+    $('saveQuickBtn').addEventListener('click', () => {
+      $('positionNameInput').value = $('quickPositionName').value.trim();
+      saveNamedPosition($('quickPositionName').value.trim());
+    });
+    $('fillFromSquareBtn').addEventListener('click', fillNameFromSelectedSquare);
+
+    $('squareModeSelect').addEventListener('change', updateSquareSuggestedName);
+    $('saveSquareModeBtn').addEventListener('click', () => saveSelectedSquareMode());
+    $('loadSquareModeBtn').addEventListener('click', loadSelectedSquareMode);
+    $('saveSquareUpBtn').addEventListener('click', () => saveSelectedSquareMode('up'));
+    $('saveSquareDownBtn').addEventListener('click', () => saveSelectedSquareMode('down'));
+
+    $('savePositionBtn').addEventListener('click', () => saveNamedPosition());
+    $('updatePositionBtn').addEventListener('click', updateSelectedPosition);
+    $('deletePositionBtn').addEventListener('click', deleteSelectedPosition);
+    $('clearAllBtn').addEventListener('click', clearAllPositions);
+    $('applyPositionBtn').addEventListener('click', applySelectedPosition);
+    $('sendPositionBtn').addEventListener('click', sendSelectedPosition);
+    $('copySelectedBtn').addEventListener('click', copySelectedJSON);
+    $('renameFromSquareBtn').addEventListener('click', fillNameFromSelectedSquare);
+    $('exportBtn').addEventListener('click', exportJSON);
+    $('importBtn').addEventListener('click', importJSON);
+    $('selectHomeBtn').addEventListener('click', selectHomePreset);
+    $('searchInput').addEventListener('input', renderPositions);
+    $('jsonFileInput').addEventListener('change', handleImportFile);
+
+    $('clearConsoleBtn').addEventListener('click', clearConsole);
+    $('copyConsoleBtn').addEventListener('click', copyConsole);
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => switchPage(tab.dataset.page));
+    });
+
+    // Init
+    buildSliders();
+    setAngles(HOME);
+    buildBoard();
+    renderPositions();
+    updateConnectionUI();
+    updateSquareSuggestedName();
+    log('Chess Robot Studio ready');
+  </script>
+</body>
+</html>

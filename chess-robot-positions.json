@@ -1,0 +1,26 @@
+[
+  {
+    "name": "G2_up",
+    "moveTime": 1200,
+    "angles": {
+      "base": 90,
+      "shoulder": 73,
+      "elbow": 140,
+      "wristRot": 90,
+      "wristPitch": 50,
+      "gripper": 90
+    }
+  },
+  {
+    "name": "G7_up",
+    "moveTime": 1200,
+    "angles": {
+      "base": 90,
+      "shoulder": 73,
+      "elbow": 140,
+      "wristRot": 90,
+      "wristPitch": 50,
+      "gripper": 90
+    }
+  }
+]

@@ -1,0 +1,11 @@
+<div style="
+        position: absolute;
+        top: 640px;
+        left: 880px;
+        width: 2px;
+        height: 3px;
+        background-color: #ff0000;
+        border-radius: 100%;
+        z-index: 9999;
+        pointer-events: none;
+    "></div>

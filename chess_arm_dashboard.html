@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لوحة معايرة ذراع الشطرنج 6DOF</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --card: #1f2937;
+      --muted: #94a3b8;
+      --text: #f8fafc;
+      --accent: #22c55e;
+      --accent2: #38bdf8;
+      --danger: #ef4444;
+      --border: #334155;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Tahoma, Arial, sans-serif;
+      background: linear-gradient(180deg, #020617, #0f172a 30%, #111827);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 18px;
+    }
+    h1, h2, h3 { margin: 0 0 10px; }
+    p { color: var(--muted); line-height: 1.7; }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.95fr;
+      gap: 18px;
+    }
+    .panel {
+      background: rgba(17, 24, 39, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.28);
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 150px 1fr 110px 82px;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    }
+    .row:last-child { border-bottom: none; }
+    label { font-weight: 700; }
+    input[type="range"] { width: 100%; }
+    input[type="number"], input[type="text"], select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0b1220;
+      color: var(--text);
+    }
+    textarea { min-height: 140px; resize: vertical; }
+    button {
+      border: 1px solid transparent;
+      background: var(--card);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: 0.15s ease;
+      font-weight: 700;
+    }
+    button:hover { transform: translateY(-1px); }
+    .primary { background: var(--accent); color: #052e16; }
+    .sky { background: var(--accent2); color: #082f49; }
+    .danger { background: var(--danger); }
+    .ghost { border-color: var(--border); }
+    .toolbar, .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+      align-items: center;
+    }
+    .status {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #0b1220;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .small { font-size: 13px; color: var(--muted); }
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 6px;
+    }
+    .sq {
+      aspect-ratio: 1;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0b1220;
+      color: var(--text);
+      font-weight: 700;
+      padding: 0;
+    }
+    .sq.light { background: #e5e7eb; color: #111827; }
+    .sq.active {
+      outline: 3px solid var(--accent);
+      outline-offset: 0;
+    }
+    .list {
+      max-height: 300px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 10px;
+      background: #0b1220;
+    }
+    .pose {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: center;
+      padding: 8px;
+      border-bottom: 1px solid rgba(148,163,184,0.12);
+    }
+    .pose:last-child { border-bottom: none; }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #1e293b;
+      color: #cbd5e1;
+      font-size: 12px;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #020617;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      line-height: 1.6;
+      color: #dbeafe;
+      min-height: 140px;
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .muted-box {
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      background: rgba(2,6,23,0.55);
+    }
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+      .row { grid-template-columns: 110px 1fr 90px 72px; }
+      .two-col { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel" style="margin-bottom:18px;">
+      <div class="topbar">
+        <h1>لوحة معايرة ذراع الشطرنج 6DOF</h1>
+        <span class="status" id="status">غير متصل</span>
+      </div>
+      <p>
+        هذه اللوحة هدفها حفظ <strong>قيم الزوايا الحرفية</strong> لكل مربع من مربعات الشطرنج أو لأي وضعية أخرى.
+        يمكنك التحريك يدويًا، ثم حفظ الوضعية باسم مثل A1 أو E4 أو HOME أو CAPTURE,
+        ثم تصدير كل البيانات إلى JSON أو TXT أو CSV.
+      </p>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <h2>1) التحكم المباشر بالمفاصل</h2>
+        <div class="toolbar">
+          <button class="primary" id="connectBtn">اتصال Web Serial</button>
+          <button class="ghost" id="sendBtn">إرسال القيم الآن</button>
+          <button class="ghost" id="homeBtn">الوضعية HOME</button>
+          <button class="danger" id="stopBtn">إيقاف/فك تحميل السيرفو</button>
+        </div>
+
+        <div id="sliders"></div>
+
+        <div class="two-col" style="margin-top:16px;">
+          <div class="muted-box">
+            <h3>نص الإرسال الحالي</h3>
+            <pre id="serialLine"></pre>
+          </div>
+          <div class="muted-box">
+            <h3>ملاحظات سريعة</h3>
+            <p class="small">
+              عدّل min/max لكل مفصل حسب حدود ذراعك الحقيقية. لو كان اتجاه مفصل عندك معكوسًا فعّل خيار Reverse لذلك المفصل.
+              يمكنك أيضًا وضع Offset ليصبح الرقم المحفوظ مطابقًا لمعايرتك.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>2) الحفظ للمربعات والوضعيات</h2>
+        <div class="toolbar">
+          <input type="text" id="poseName" placeholder="اسم الوضعية مثل A1 أو E4 أو HOME" />
+          <button class="sky" id="savePoseBtn">حفظ الوضعية الحالية</button>
+          <button class="ghost" id="copyTxtBtn">نسخ TXT</button>
+          <button class="ghost" id="copyJsonBtn">نسخ JSON</button>
+        </div>
+
+        <div class="muted-box" style="margin-bottom:14px;">
+          <h3>اختيار مربع شطرنج سريع</h3>
+          <div class="mini-grid" id="board"></div>
+        </div>
+
+        <div class="list" id="posesList"></div>
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:18px;">
+      <div class="panel">
+        <h2>3) التصدير والاستيراد</h2>
+        <div class="toolbar">
+          <button class="primary" id="downloadJsonBtn">تنزيل JSON</button>
+          <button class="ghost" id="downloadTxtBtn">تنزيل TXT</button>
+          <button class="ghost" id="downloadCsvBtn">تنزيل CSV</button>
+          <button class="ghost" id="loadJsonBtn">تحميل JSON</button>
+          <input type="file" id="loadFile" accept=".json" style="display:none;" />
+        </div>
+        <pre id="exportPreview"></pre>
+      </div>
+
+      <div class="panel">
+        <h2>4) شكل البيانات المقترح لمشروع الشطرنج</h2>
+        <pre id="formatPreview">{
+  "meta": {
+    "robot": "6DOF Chess Arm",
+    "units": "deg"
+  },
+  "poses": {
+    "HOME": {"B":90,"S":90,"E":90,"WR":90,"WP":90,"G":120},
+    "A1":   {"B":87,"S":121,"E":138,"WR":90,"WP":52,"G":118},
+    "A1_PICK": {"B":87,"S":126,"E":144,"WR":90,"WP":47,"G":92}
+  }
+}</pre>
+      </div>
+    </div>
+  </div>
+
+<script>
+const joints = [
+  { key: 'B', label: 'Base', min: 0, max: 180, value: 90, reverse: false, offset: 0 },
+  { key: 'S', label: 'Shoulder', min: 0, max: 180, value: 90, reverse: false, offset: 0 },
+  { key: 'E', label: 'Elbow', min: 0, max: 180, value: 90, reverse: false, offset: 0 },
+  { key: 'WR', label: 'Wrist Rot', min: 0, max: 180, value: 90, reverse: false, offset: 0 },
+  { key: 'WP', label: 'Wrist Pitch', min: 0, max: 180, value: 90, reverse: false, offset: 0 },
+  { key: 'G', label: 'Gripper', min: 0, max: 180, value: 120, reverse: false, offset: 0 }
+];
+
+let port = null;
+let writer = null;
+let connected = false;
+let poses = {};
+let selectedSquare = '';
+
+const slidersEl = document.getElementById('sliders');
+const serialLineEl = document.getElementById('serialLine');
+const statusEl = document.getElementById('status');
+const posesListEl = document.getElementById('posesList');
+const exportPreviewEl = document.getElementById('exportPreview');
+const poseNameEl = document.getElementById('poseName');
+
+function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
+
+function logicalToServo(joint, logical) {
+  let v = Number(logical) + Number(joint.offset || 0);
+  if (joint.reverse) v = joint.max - (v - joint.min);
+  return clamp(Math.round(v), joint.min, joint.max);
+}
+
+function currentPose(logical=true) {
+  const out = {};
+  joints.forEach(j => out[j.key] = logical ? Number(j.value) : logicalToServo(j, j.value));
+  return out;
+}
+
+function currentSerialLine() {
+  const p = currentPose(false);
+  return `${p.B},${p.S},${p.E},${p.WR},${p.WP},${p.G}`;
+}
+
+function updateSerialPreview() {
+  serialLineEl.textContent = currentSerialLine();
+  updateExportPreview();
+}
+
+function renderSliders() {
+  slidersEl.innerHTML = '';
+  joints.forEach((joint, idx) => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `
+      <label>${joint.label} <span class="badge">${joint.key}</span></label>
+      <input type="range" min="${joint.min}" max="${joint.max}" value="${joint.value}" step="1" id="range_${joint.key}">
+      <input type="number" min="${joint.min}" max="${joint.max}" value="${joint.value}" step="1" id="num_${joint.key}">
+      <button class="ghost" id="cfg_${joint.key}">ضبط</button>
+    `;
+    slidersEl.appendChild(row);
+
+    const range = row.querySelector(`#range_${joint.key}`);
+    const num = row.querySelector(`#num_${joint.key}`);
+    const cfgBtn = row.querySelector(`#cfg_${joint.key}`);
+
+    range.addEventListener('input', () => {
+      joint.value = clamp(Number(range.value), joint.min, joint.max);
+      num.value = joint.value;
+      updateSerialPreview();
+    });
+
+    num.addEventListener('input', () => {
+      joint.value = clamp(Number(num.value), joint.min, joint.max);
+      range.value = joint.value;
+      updateSerialPreview();
+    });
+
+    cfgBtn.addEventListener('click', () => openJointConfig(idx));
+  });
+  updateSerialPreview();
+}
+
+function openJointConfig(index) {
+  const j = joints[index];
+  const min = prompt(`Min لـ ${j.label}`, j.min);
+  if (min === null) return;
+  const max = prompt(`Max لـ ${j.label}`, j.max);
+  if (max === null) return;
+  const reverse = confirm(`هل تريد عكس الاتجاه للمفصل ${j.label}؟\nOK = نعم، Cancel = لا`);
+  const offset = prompt(`Offset لـ ${j.label}`, j.offset || 0);
+  j.min = Number(min);
+  j.max = Number(max);
+  j.reverse = reverse;
+  j.offset = Number(offset || 0);
+  j.value = clamp(j.value, j.min, j.max);
+  renderSliders();
+}
+
+function renderBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  const files = ['A','B','C','D','E','F','G','H'];
+  for (let r = 8; r >= 1; r--) {
+    for (let f = 0; f < 8; f++) {
+      const sq = `${files[f]}${r}`;
+      const btn = document.createElement('button');
+      btn.className = 'sq ' + (((r + f) % 2 === 0) ? 'light' : '');
+      btn.textContent = sq;
+      if (sq === selectedSquare) btn.classList.add('active');
+      btn.onclick = () => {
+        selectedSquare = sq;
+        poseNameEl.value = sq;
+        renderBoard();
+      };
+      board.appendChild(btn);
+    }
+  }
+}
+
+function savePose(name) {
+  if (!name) return alert('اكتب اسم الوضعية أولًا');
+  poses[name] = currentPose(true);
+  renderPoses();
+  updateExportPreview();
+}
+
+function applyPose(name) {
+  const p = poses[name];
+  if (!p) return;
+  joints.forEach(j => {
+    if (p[j.key] !== undefined) j.value = Number(p[j.key]);
+  });
+  renderSliders();
+}
+
+function deletePose(name) {
+  delete poses[name];
+  renderPoses();
+  updateExportPreview();
+}
+
+function renderPoses() {
+  posesListEl.innerHTML = '';
+  const names = Object.keys(poses).sort((a,b) => a.localeCompare(b, 'en'));
+  if (!names.length) {
+    posesListEl.innerHTML = '<p class="small">لا توجد وضعيات محفوظة بعد.</p>';
+    return;
+  }
+  names.forEach(name => {
+    const div = document.createElement('div');
+    div.className = 'pose';
+    div.innerHTML = `
+      <div>
+        <strong>${name}</strong>
+        <div class="small">${Object.entries(poses[name]).map(([k,v]) => `${k}:${v}`).join(' | ')}</div>
+      </div>
+      <button class="ghost">تحميل</button>
+      <button class="danger">حذف</button>
+    `;
+    const [loadBtn, delBtn] = div.querySelectorAll('button');
+    loadBtn.onclick = () => applyPose(name);
+    delBtn.onclick = () => deletePose(name);
+    posesListEl.appendChild(div);
+  });
+}
+
+function exportObject() {
+  return {
+    meta: {
+      robot: '6DOF Chess Arm',
+      units: 'deg',
+      savedAt: new Date().toISOString(),
+      jointConfig: joints.map(j => ({ key: j.key, label: j.label, min: j.min, max: j.max, reverse: j.reverse, offset: j.offset }))
+    },
+    poses
+  };
+}
+
+function exportJson() {
+  return JSON.stringify(exportObject(), null, 2);
+}
+
+function exportTxt() {
+  const lines = [];
+  const names = Object.keys(poses).sort((a,b) => a.localeCompare(b, 'en'));
+  names.forEach(name => {
+    const p = poses[name];
+    lines.push(`${name} = B:${p.B}, S:${p.S}, E:${p.E}, WR:${p.WR}, WP:${p.WP}, G:${p.G}`);
+  });
+  return lines.join('\n');
+}
+
+function exportCsv() {
+  const names = Object.keys(poses).sort((a,b) => a.localeCompare(b, 'en'));
+  const lines = ['name,B,S,E,WR,WP,G'];
+  names.forEach(name => {
+    const p = poses[name];
+    lines.push(`${name},${p.B},${p.S},${p.E},${p.WR},${p.WP},${p.G}`);
+  });
+  return lines.join('\n');
+}
+
+function updateExportPreview() {
+  exportPreviewEl.textContent = exportTxt() || 'لا توجد بيانات محفوظة بعد.';
+}
+
+function downloadFile(filename, content, mime='text/plain;charset=utf-8') {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function connectSerial() {
+  if (!('serial' in navigator)) {
+    alert('المتصفح لا يدعم Web Serial. استخدم Chrome أو Edge على الكمبيوتر.');
+    return;
+  }
+  try {
+    port = await navigator.serial.requestPort();
+    await port.open({ baudRate: 115200 });
+    writer = port.writable.getWriter();
+    connected = true;
+    statusEl.textContent = 'متصل';
+  } catch (e) {
+    console.error(e);
+    alert('فشل الاتصال التسلسلي');
+  }
+}
+
+async function sendCurrent() {
+  if (!connected || !writer) return alert('اتصل أولًا');
+  try {
+    const line = currentSerialLine() + '\n';
+    await writer.write(new TextEncoder().encode(line));
+  } catch (e) {
+    console.error(e);
+    alert('فشل الإرسال');
+  }
+}
+
+async function sendStop() {
+  if (!connected || !writer) return alert('اتصل أولًا');
+  try {
+    await writer.write(new TextEncoder().encode('STOP\n'));
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function copyText(txt) {
+  navigator.clipboard.writeText(txt).then(() => alert('تم النسخ'));
+}
+
+function loadJsonText(text) {
+  const obj = JSON.parse(text);
+  if (obj.meta && Array.isArray(obj.meta.jointConfig)) {
+    obj.meta.jointConfig.forEach(cfg => {
+      const j = joints.find(x => x.key === cfg.key);
+      if (j) {
+        j.min = Number(cfg.min);
+        j.max = Number(cfg.max);
+        j.reverse = !!cfg.reverse;
+        j.offset = Number(cfg.offset || 0);
+      }
+    });
+  }
+  poses = obj.poses || {};
+  renderSliders();
+  renderPoses();
+  updateExportPreview();
+}
+
+// Events
+renderSliders();
+renderBoard();
+renderPoses();
+updateExportPreview();
+
+// default startup poses
+poses.HOME = currentPose(true);
+renderPoses();
+updateExportPreview();
+
+document.getElementById('connectBtn').onclick = connectSerial;
+document.getElementById('sendBtn').onclick = sendCurrent;
+document.getElementById('homeBtn').onclick = () => { applyPose('HOME'); };
+document.getElementById('stopBtn').onclick = sendStop;
+document.getElementById('savePoseBtn').onclick = () => savePose(poseNameEl.value.trim());
+document.getElementById('copyTxtBtn').onclick = () => copyText(exportTxt());
+document.getElementById('copyJsonBtn').onclick = () => copyText(exportJson());
+document.getElementById('downloadJsonBtn').onclick = () => downloadFile('chess_arm_poses.json', exportJson(), 'application/json;charset=utf-8');
+document.getElementById('downloadTxtBtn').onclick = () => downloadFile('chess_arm_poses.txt', exportTxt());
+document.getElementById('downloadCsvBtn').onclick = () => downloadFile('chess_arm_poses.csv', exportCsv(), 'text/csv;charset=utf-8');
+document.getElementById('loadJsonBtn').onclick = () => document.getElementById('loadFile').click();
+document.getElementById('loadFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  loadJsonText(text);
+});
+</script>
+</body>
+</html>

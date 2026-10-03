@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chess Arm Calibration</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    .page {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-top: 0;
+      margin-bottom: 16px;
+      font-size: 28px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 18px;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    }
+
+    .panel h2 {
+      margin-top: 0;
+      font-size: 20px;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-size: 15px;
+      background: #2563eb;
+      color: white;
+    }
+
+    button.secondary {
+      background: #4b5563;
+    }
+
+    button.success {
+      background: #16a34a;
+    }
+
+    button.warning {
+      background: #d97706;
+    }
+
+    button.danger {
+      background: #dc2626;
+    }
+
+    .status {
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      color: #1e3a8a;
+      border-radius: 12px;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+    }
+
+    .selected-box {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 14px;
+      font-weight: bold;
+    }
+
+    .slider-row {
+      margin-bottom: 16px;
+    }
+
+    .slider-row label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    .separator {
+      height: 1px;
+      background: #e5e7eb;
+      margin: 16px 0;
+    }
+
+    .board {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(60px, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+  direction: ltr;
+}
+
+    .square, .preset {
+      aspect-ratio: 1 / 1;
+      border: 2px solid #111827;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: bold;
+      user-select: none;
+      position: relative;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+      text-align: center;
+      padding: 6px;
+      white-space: pre-line;
+    }
+
+    .square:hover, .preset:hover {
+      transform: scale(0.98);
+    }
+
+    .light {
+      background: #f0d9b5;
+      color: #111827;
+    }
+
+    .dark {
+      background: #b58863;
+      color: white;
+    }
+
+    .preset {
+      background: #e5e7eb;
+      color: #111827;
+      max-width: 160px;
+    }
+
+    .selected {
+      box-shadow: 0 0 0 4px #2563eb inset;
+    }
+
+    .saved::after {
+      content: "●";
+      position: absolute;
+      top: 6px;
+      left: 8px;
+      font-size: 13px;
+      color: #16a34a;
+      background: white;
+      border-radius: 50%;
+      line-height: 1;
+      padding: 1px 4px;
+    }
+
+    .presets {
+      display: grid;
+      grid-template-columns: repeat(1, minmax(120px, 160px));
+      gap: 10px;
+    }
+
+    .small-note {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #374151;
+      line-height: 1.8;
+    }
+
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>معايرة الذراع على مربعات الشطرنج</h1>
+
+    <div class="layout">
+      <div class="panel">
+        <h2>التحكم اليدوي</h2>
+
+        <div class="buttons">
+          <button id="connectBtn">ربط الأردوينو</button>
+          <button id="all90Btn" class="warning">جعل الجميع 90°</button>
+        </div>
+
+        <div class="status" id="status">غير متصل</div>
+
+        <div class="selected-box" id="selectedBox">المحدد الحالي: REF</div>
+
+        <h2>المفاصل الأساسية</h2>
+        <div id="mainSliders"></div>
+
+        <div class="separator"></div>
+
+        <h2>Gripper</h2>
+        <div id="gripperSliderContainer"></div>
+
+        <div class="buttons">
+          <button id="saveBtn" class="success">حفظ الزوايا الحالية في المحدد</button>
+          <button id="loadBtn" class="secondary">تحميل زوايا المحدد إلى السلايدرات</button>
+          <button id="moveBtn">الانتقال المرحلي إلى المحدد</button>
+          <button id="cancelMoveBtn" class="warning">إلغاء الانتقال المرحلي</button>
+          <button id="clearBtn" class="danger">مسح بيانات المحدد</button>
+        </div>
+
+        <div class="small-note">
+          السلايدرات حيّة وترسل مباشرة إلى الأردوينو.<br>
+          زوايا المربعات المحفوظة تشمل فقط:
+          Base / Shoulder / Elbow / Wrist1 / Wrist2<br>
+          أما الـ Gripper فهو مستقل ولا يدخل في الحفظ أو التحميل.<br>
+          زر الانتقال المرحلي يستخدم انتظارًا ثابتًا قدره 3 ثوانٍ كتجربة أولى.
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>لوحة الشطرنج 8×8</h2>
+        <div class="board" id="board"></div>
+
+        <h2>المربعات الخاصة</h2>
+        <div class="presets" id="presets"></div>
+
+        <div class="small-note">
+          REF = الوضع المرجعي<br>
+          عند اختيار مربع عادي ثم الضغط على "الانتقال المرحلي":
+          <br>1) تصحيح جميع المفاصل ما عدا الكتف
+          <br>2) انتظار 3 ثوانٍ
+          <br>3) إرسال زاوية الكتف
+          <br><br>
+          عند اختيار REF:
+          <br>1) تحريك الكتف أولًا
+          <br>2) انتظار 3 ثوانٍ
+          <br>3) تصحيح بقية المفاصل
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const MAIN_JOINT_NAMES = ["Base", "Shoulder", "Elbow", "Wrist1", "Wrist2"];
+    const GRIPPER_NAME = "Gripper";
+    const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];
+    const EXTRA_KEYS = [
+      { key: "REF", label: "REF\nمرجعي" }
+    ];
+
+    const STORAGE_KEY = "robot_arm_chess_calibration_v4";
+    const SEND_DEBOUNCE_MS = 120;
+    const TRANSITION_DELAY_MS = 3000;
+
+    const BASE_INDEX = 0;
+    const SHOULDER_INDEX = 1;
+    const ELBOW_INDEX = 2;
+    const WRIST1_INDEX = 3;
+    const WRIST2_INDEX = 4;
+    const GRIPPER_INDEX = 5;
+
+    let port = null;
+    let writer = null;
+    let selectedKey = "REF";
+    let sendTimer = null;
+    let transitionTimer = null;
+    let suppressLiveSend = false;
+    let isTransitionRunning = false;
+
+    const statusEl = document.getElementById("status");
+    const selectedBox = document.getElementById("selectedBox");
+    const mainSlidersContainer = document.getElementById("mainSliders");
+    const gripperSliderContainer = document.getElementById("gripperSliderContainer");
+    const boardEl = document.getElementById("board");
+    const presetsEl = document.getElementById("presets");
+
+    function createDefaultPoses() {
+      const poses = {};
+
+      for (let rank = 8; rank >= 1; rank--) {
+        for (let fileIndex = 0; fileIndex < 8; fileIndex++) {
+          const key = `${FILES[fileIndex]}${rank}`;
+          poses[key] = null;
+        }
+      }
+
+      poses["REF"] = null;
+      return poses;
+    }
+
+    function loadPoses() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const defaults = createDefaultPoses();
+
+      if (!raw) return defaults;
+
+      try {
+        const parsed = JSON.parse(raw);
+        return { ...defaults, ...parsed };
+      } catch (e) {
+        return defaults;
+      }
+    }
+
+    let poses = loadPoses();
+
+    function savePosesToStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(poses));
+    }
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    function updateSelectedBox() {
+      selectedBox.textContent = `المحدد الحالي: ${selectedKey}`;
+    }
+
+    function createMainSliders() {
+      mainSlidersContainer.innerHTML = "";
+
+      MAIN_JOINT_NAMES.forEach((name, index) => {
+        const row = document.createElement("div");
+        row.className = "slider-row";
+
+        row.innerHTML = `
+          <label>
+            <span>${name}</span>
+            <span id="mainValue${index}">90</span>
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="180"
+            value="90"
+            id="mainSlider${index}"
+          />
+        `;
+
+        mainSlidersContainer.appendChild(row);
+
+        const slider = document.getElementById(`mainSlider${index}`);
+        const valueEl = document.getElementById(`mainValue${index}`);
+
+        slider.addEventListener("input", () => {
+          valueEl.textContent = slider.value;
+
+          if (suppressLiveSend) return;
+
+          if (isTransitionRunning) {
+            cancelTransition(false);
+            setStatus("تم إلغاء الانتقال المرحلي بسبب تحكم يدوي");
+          }
+
+          scheduleSendCurrentAngles();
+        });
+      });
+    }
+
+    function createGripperSlider() {
+      gripperSliderContainer.innerHTML = `
+        <div class="slider-row">
+          <label>
+            <span>${GRIPPER_NAME}</span>
+            <span id="gripperValue">90</span>
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="180"
+            value="90"
+            id="gripperSlider"
+          />
+        </div>
+      `;
+
+      const slider = document.getElementById("gripperSlider");
+      const valueEl = document.getElementById("gripperValue");
+
+      slider.addEventListener("input", () => {
+        valueEl.textContent = slider.value;
+
+        if (suppressLiveSend) return;
+
+        if (isTransitionRunning) {
+          cancelTransition(false);
+          setStatus("تم إلغاء الانتقال المرحلي بسبب تحكم يدوي في gripper");
+        }
+
+        scheduleSendCurrentAngles();
+      });
+    }
+
+    function getCurrentMainAngles() {
+      const angles = [];
+      for (let i = 0; i < 5; i++) {
+        angles.push(parseInt(document.getElementById(`mainSlider${i}`).value, 10));
+      }
+      return angles;
+    }
+
+    function getCurrentGripperAngle() {
+      return parseInt(document.getElementById("gripperSlider").value, 10);
+    }
+
+    function buildFullAngles(mainAngles = null, gripperAngle = null) {
+      const finalMain = mainAngles ?? getCurrentMainAngles();
+      const finalGripper = gripperAngle ?? getCurrentGripperAngle();
+
+      return [
+        finalMain[0],
+        finalMain[1],
+        finalMain[2],
+        finalMain[3],
+        finalMain[4],
+        finalGripper
+      ];
+    }
+
+    function setMainSliders(mainAngles) {
+      suppressLiveSend = true;
+
+      for (let i = 0; i < 5; i++) {
+        const value = Number(mainAngles[i] ?? 90);
+        const safe = Math.max(0, Math.min(180, value));
+        document.getElementById(`mainSlider${i}`).value = safe;
+        document.getElementById(`mainValue${i}`).textContent = safe;
+      }
+
+      suppressLiveSend = false;
+    }
+
+    function setGripperSlider(angle) {
+      suppressLiveSend = true;
+
+      const safe = Math.max(0, Math.min(180, Number(angle ?? 90)));
+      document.getElementById("gripperSlider").value = safe;
+      document.getElementById("gripperValue").textContent = safe;
+
+      suppressLiveSend = false;
+    }
+
+    async function connectSerial() {
+      try {
+        if (!("serial" in navigator)) {
+          setStatus("هذا المتصفح لا يدعم Web Serial");
+          return;
+        }
+
+        port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 115200 });
+
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        writer = port.writable.getWriter();
+        setStatus("تم الاتصال بالأردوينو");
+      } catch (err) {
+        setStatus("فشل الاتصال: " + err.message);
+      }
+    }
+
+    async function sendAngles(fullAngles = null) {
+      if (!writer) {
+        setStatus("الأردوينو غير متصل");
+        return;
+      }
+
+      try {
+        const finalAngles = fullAngles ?? buildFullAngles();
+        const cmd = finalAngles.join(",") + "\n";
+        const data = new TextEncoder().encode(cmd);
+        await writer.write(data);
+        setStatus("تم إرسال: " + cmd.trim());
+      } catch (err) {
+        setStatus("فشل الإرسال: " + err.message);
+      }
+    }
+
+    function scheduleSendCurrentAngles() {
+      clearTimeout(sendTimer);
+      sendTimer = setTimeout(() => {
+        sendAngles(buildFullAngles());
+      }, SEND_DEBOUNCE_MS);
+    }
+
+    function cancelTransition(updateStatus = true) {
+      if (transitionTimer) {
+        clearTimeout(transitionTimer);
+        transitionTimer = null;
+      }
+
+      isTransitionRunning = false;
+
+      if (updateStatus) {
+        setStatus("تم إلغاء الانتقال المرحلي");
+      }
+    }
+
+    function selectKey(key) {
+      selectedKey = key;
+      updateSelectedBox();
+      renderBoard();
+      renderPresets();
+
+      if (poses[key]) {
+        setStatus(`تم تحديد ${key}. يمكنك تحميل زواياه أو تنفيذ الانتقال المرحلي.`);
+      } else {
+        setStatus(`تم تحديد ${key}. لا توجد زوايا محفوظة له بعد.`);
+      }
+    }
+
+    function saveCurrentToSelected() {
+      const currentMain = getCurrentMainAngles();
+      poses[selectedKey] = [...currentMain];
+      savePosesToStorage();
+      renderBoard();
+      renderPresets();
+      setStatus(`تم حفظ زوايا المفاصل الأساسية في ${selectedKey}`);
+    }
+
+    function loadSelectedToSliders() {
+      const pose = poses[selectedKey];
+
+      if (!pose) {
+        setStatus(`لا توجد زوايا محفوظة في ${selectedKey}`);
+        return;
+      }
+
+      setMainSliders(pose);
+      setStatus(`تم تحميل زوايا ${selectedKey} إلى السلايدرات بدون تحريك الذراع`);
+    }
+
+    async function moveToSelected() {
+      const targetPose = poses[selectedKey];
+
+      if (!targetPose) {
+        setStatus(`لا توجد زوايا محفوظة في ${selectedKey}`);
+        return;
+      }
+
+      cancelTransition(false);
+      clearTimeout(sendTimer);
+
+      const currentMain = getCurrentMainAngles();
+      const currentGripper = getCurrentGripperAngle();
+
+      let phase1Main;
+      let phase2Main;
+
+      if (selectedKey === "REF") {
+        // المرجع: الكتف أولًا، ثم بقية المفاصل
+        phase1Main = [...currentMain];
+        phase1Main[SHOULDER_INDEX] = targetPose[SHOULDER_INDEX];
+
+        phase2Main = [...targetPose];
+      } else {
+        // مربع عادي: كل شيء ما عدا الكتف، ثم الكتف
+        phase1Main = [...targetPose];
+        phase1Main[SHOULDER_INDEX] = currentMain[SHOULDER_INDEX];
+
+        phase2Main = [...targetPose];
+      }
+
+      isTransitionRunning = true;
+
+      setMainSliders(phase1Main);
+      await sendAngles(buildFullAngles(phase1Main, currentGripper));
+      setStatus(`تم إرسال المرحلة الأولى إلى ${selectedKey}. انتظار 3 ثوانٍ...`);
+
+      transitionTimer = setTimeout(async () => {
+        try {
+          setMainSliders(phase2Main);
+          await sendAngles(buildFullAngles(phase2Main, currentGripper));
+          isTransitionRunning = false;
+          transitionTimer = null;
+          setStatus(`اكتمل الانتقال المرحلي إلى ${selectedKey}`);
+        } catch (err) {
+          isTransitionRunning = false;
+          transitionTimer = null;
+          setStatus("حدث خطأ في المرحلة الثانية: " + err.message);
+        }
+      }, TRANSITION_DELAY_MS);
+    }
+
+    function clearSelected() {
+      poses[selectedKey] = null;
+      savePosesToStorage();
+      renderBoard();
+      renderPresets();
+      setStatus(`تم مسح بيانات ${selectedKey}`);
+    }
+
+    function setAllTo90() {
+      cancelTransition(false);
+      clearTimeout(sendTimer);
+
+      setMainSliders([90, 90, 90, 90, 90]);
+      setGripperSlider(90);
+
+      scheduleSendCurrentAngles();
+      setStatus("تم ضبط جميع السلايدرات على 90");
+    }
+
+    function renderBoard() {
+      boardEl.innerHTML = "";
+
+      for (let rank = 8; rank >= 1; rank--) {
+        for (let fileIndex = 0; fileIndex < 8; fileIndex++) {
+          const key = `${FILES[fileIndex]}${rank}`;
+          const cell = document.createElement("div");
+
+          const isLight = (rank + fileIndex) % 2 === 0;
+          cell.className = `square ${isLight ? "light" : "dark"}`;
+
+          if (poses[key]) cell.classList.add("saved");
+          if (selectedKey === key) cell.classList.add("selected");
+
+          cell.textContent = key;
+          cell.addEventListener("click", () => selectKey(key));
+
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+
+    function renderPresets() {
+      presetsEl.innerHTML = "";
+
+      EXTRA_KEYS.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "preset";
+
+        if (poses[item.key]) {
+          card.classList.add("saved");
+        }
+
+        if (selectedKey === item.key) {
+          card.classList.add("selected");
+        }
+
+        card.textContent = item.label;
+        card.addEventListener("click", () => selectKey(item.key));
+
+        presetsEl.appendChild(card);
+      });
+    }
+
+    document.getElementById("connectBtn").addEventListener("click", connectSerial);
+    document.getElementById("saveBtn").addEventListener("click", saveCurrentToSelected);
+    document.getElementById("loadBtn").addEventListener("click", loadSelectedToSliders);
+    document.getElementById("moveBtn").addEventListener("click", moveToSelected);
+    document.getElementById("cancelMoveBtn").addEventListener("click", () => cancelTransition(true));
+    document.getElementById("clearBtn").addEventListener("click", clearSelected);
+    document.getElementById("all90Btn").addEventListener("click", setAllTo90);
+
+    createMainSliders();
+    createGripperSlider();
+    updateSelectedBox();
+    renderBoard();
+    renderPresets();
+  </script>
+</body>
+</html>

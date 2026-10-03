@@ -1,0 +1,24 @@
+const int buttonPin = 2;  // الزر متصل بين الدبوس 4 والـ GND
+const int ledPin = 13;    
+
+int buttonState = 0;  
+
+void setup() {
+    Serial.begin(9600); 
+    pinMode(ledPin, OUTPUT);
+    
+    // تفعيل المقاومة الداخلية لإنهاء مشكلة الدبوس العائم
+    pinMode(buttonPin, INPUT_PULLUP); 
+}
+
+void loop() {
+  buttonState = digitalRead(buttonPin);
+
+  // المنطق هنا ينعكس: LOW تعني أن الزر مضغوط
+  if (buttonState == LOW) {
+    digitalWrite(ledPin, LOW); // إضاءة الـ LED (لأنك موصله بـ 3.3V)
+    Serial.println("Button Pressed!");
+  } else {
+    digitalWrite(ledPin, HIGH); // إطفاء الـ LED
+  }
+}

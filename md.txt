@@ -1,0 +1,24 @@
+green 3
+white 5
+blue 6
+black 9
+brown 10
+purple 11
+
+
+
+
+46
+121
+58
+45
+76
+
+
+ps-purple
+gray
+black
+blue
+white
+brown
+orange

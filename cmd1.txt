@@ -1,0 +1,2 @@
+taskkill /im "mspaint.exe" /f
+
